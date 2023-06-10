@@ -14,14 +14,6 @@ file for now, and they focus on the important discussion topics related to my
 cyber security work.
 
 
-## TODO
-
-Currently, only the links are gathered together, and each listing is stored in
-the `archive/<subreddit>/listings/<thread-id>.json` files. In order to have all
-the comments, too, it's necessary to parse out all those JSON files and download
-the thread's comments data as well.
-
-
 # License
 
 AGPL-3.0
