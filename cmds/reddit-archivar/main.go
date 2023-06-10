@@ -5,11 +5,9 @@ import "reddit-archivar/structs"
 import "reddit-archivar/schemas"
 import "encoding/json"
 import "os"
-import "strconv"
 import "strings"
 
 var CACHE structs.Cache
-var ERRORS int
 var SCRAPER structs.Scraper
 var KEYWORDS []string = []string{
 	"CVE",
@@ -24,11 +22,10 @@ var KEYWORDS []string = []string{
 }
 
 func init() {
-	ERRORS = 0
 	SCRAPER = structs.NewScraper(1)
 }
 
-func scrape(task *structs.Task) {
+func scrapeThreads(task *structs.Task) {
 
 	var url = task.ToURL("")
 
@@ -36,12 +33,12 @@ func scrape(task *structs.Task) {
 
 		SCRAPER.DeferRequest(url, func(buffer []byte) {
 
-			var schema schemas.Listing
+			var schema schemas.ThreadListing
 
 			err := json.Unmarshal(buffer, &schema)
 
 			if err == nil {
-				processListing(task, &schema)
+				processThreads(task, &schema)
 			}
 
 		})
@@ -50,7 +47,7 @@ func scrape(task *structs.Task) {
 
 }
 
-func processListing(task *structs.Task, schema *schemas.Listing) {
+func processThreads(task *structs.Task, schema *schemas.ThreadListing) {
 
 	if schema.Data.After != nil {
 
@@ -62,21 +59,12 @@ func processListing(task *structs.Task, schema *schemas.Listing) {
 
 			SCRAPER.DeferRequest(url, func(buffer []byte) {
 
-				var schema schemas.Listing
+				var schema schemas.ThreadListing
 
 				err := json.Unmarshal(buffer, &schema)
 
 				if err == nil {
-
-					processListing(task, &schema)
-
-				} else {
-
-					ERRORS++
-
-					os.WriteFile("/tmp/reddit-error-" + strconv.Itoa(ERRORS) + ".json", buffer, 0666)
-					console.Warn(err.Error())
-
+					processThreads(task, &schema)
 				}
 
 			})
@@ -96,8 +84,25 @@ func processListing(task *structs.Task, schema *schemas.Listing) {
 
 				if child.Data.Identifier != "" {
 
-					if CACHE.Exists("listing/" + child.Data.Identifier + ".json") == false {
-						CACHE.Write("listing/" + child.Data.Identifier + ".json", buffer)
+					if CACHE.Exists("threads/" + child.Data.Identifier + ".json") == false {
+						CACHE.Write("threads/" + child.Data.Identifier + ".json", buffer)
+					}
+
+					if CACHE.Exists("comments/" + child.Data.Identifier + ".json") == false {
+
+						comments_task := structs.NewTask(task.Subreddit, "comments", "")
+						comments_url := comments_task.ToURL(child.Data.Identifier)
+
+						if comments_url != "" {
+
+							buffer := SCRAPER.Request(comments_url)
+
+							if len(buffer) > 0 {
+								CACHE.Write("comments/" + child.Data.Identifier + ".json", buffer)
+							}
+
+						}
+
 					}
 
 				}
@@ -194,7 +199,7 @@ func main() {
 
 			var task = structs.NewTask(subreddit, "search", KEYWORDS[k])
 
-			scrape(&task)
+			scrapeThreads(&task)
 
 		}
 
@@ -202,9 +207,9 @@ func main() {
 		var task_new = structs.NewTask(subreddit, "new", "")
 		var task_top = structs.NewTask(subreddit, "top", "")
 
-		scrape(&task_hot)
-		scrape(&task_new)
-		scrape(&task_top)
+		scrapeThreads(&task_hot)
+		scrapeThreads(&task_new)
+		scrapeThreads(&task_top)
 
 		for SCRAPER.Busy == true {
 			// Wait for Scraper

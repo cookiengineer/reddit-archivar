@@ -23,7 +23,7 @@ func NewTask(subreddit string, typ string, query string) Task {
 
 }
 
-func (task *Task) ToURL(after string) string {
+func (task *Task) ToURL(identifier string) string {
 
 	var url string
 
@@ -37,22 +37,27 @@ func (task *Task) ToURL(after string) string {
 			url += "&count=" + strconv.Itoa(task.Count)
 		}
 
-		if after != "" {
-			url += "&after=" + after
+		if identifier != "" {
+			url += "&after=" + identifier
 		}
+
+	} else if task.Type == "comments" {
+
+		url = "https://old.reddit.com/r/" + task.Subreddit + "/comments/" + identifier + ".json"
 
 	} else if task.Type == "search" {
 
 		url = "https://old.reddit.com/r/" + task.Subreddit + "/search.json"
 		url += "?q=" + task.Query
-		url += "&restrict_sr=off"
+		url += "&restrict_sr=on"
+		url += "&t=all"
 
 		if task.Count != 0 {
 			url += "&count=" + strconv.Itoa(task.Count)
 		}
 
-		if after != "" {
-			url += "&after=" + after
+		if identifier != "" {
+			url += "&after=" + identifier
 		}
 
 	}
