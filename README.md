@@ -37,12 +37,8 @@ cp keywords.json ./build/keywords.json;
 
 cd ./build && reddit-archivar /r/MalwareResearch;
 ```
-The keywords are kind of statically set inside the `cmds/reddit-archivar/main.go`
-file for now, and they focus on the important discussion topics related to my
-cyber security work.
 
-
-# TODO
+## TODO
 
 These subreddits went private too early, so I couldn't archive them :(
 
