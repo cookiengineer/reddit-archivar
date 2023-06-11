@@ -1,6 +1,7 @@
 #!/bin/bash
 
 go build -o ./build/reddit-archivar ./cmds/reddit-archivar/main.go;
+cp ./keywords.json ./build/keywords.json;
 
 cd ./build;
 
