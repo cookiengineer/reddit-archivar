@@ -9,20 +9,30 @@ import "strings"
 
 var CACHE structs.Cache
 var SCRAPER structs.Scraper
-var KEYWORDS []string = []string{
-	"CVE",
-	"RCE",
-	"vulnerability",
-	"exploit",
-	"zeroday",
-	"0-day",
-	"ransomware",
-	"breach",
-	"leak",
-}
+var KEYWORDS []string
 
 func init() {
+
+	cwd, err1 := os.Getwd()
+
+	if err1 == nil {
+
+		stat, err2 := os.Stat(cwd + "/keywords.json")
+
+		if err2 == nil && stat.IsDir() == false {
+
+			buffer, err3 := os.ReadFile(cwd + "/keywords.json")
+
+			if err3 == nil {
+				json.Unmarshal(buffer, &KEYWORDS)
+			}
+
+		}
+
+	}
+
 	SCRAPER = structs.NewScraper(1)
+
 }
 
 func scrapeThreads(task *structs.Task) {
@@ -190,7 +200,13 @@ func main() {
 		cwd, err := os.Getwd()
 
 		if err == nil {
+
+			if strings.HasSuffix(cwd, "/build") {
+				cwd = cwd[0:len(cwd)-6]
+			}
+
 			CACHE = structs.NewCache(cwd + "/archive/" + subreddit)
+
 		} else {
 			CACHE = structs.NewCache("/tmp/reddit-archivar/" + subreddit)
 		}

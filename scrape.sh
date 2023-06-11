@@ -1,6 +1,8 @@
 #!/bin/bash
 
-go build -o ./reddit-archivar ./cmds/reddit-archivar/main.go;
+go build -o ./build/reddit-archivar ./cmds/reddit-archivar/main.go;
+
+cd ./build;
 
 ./reddit-archivar /r/antivirus;
 

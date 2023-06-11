@@ -1,3 +1,4 @@
 /archive/*
 !/archive/.gitkeep
-/reddit-archivar
+/build/*
+!/build/.gitkeep

@@ -73,7 +73,7 @@ func processRequests(scraper *Scraper) {
 
 		if len(scraper.Tasks) > 0 {
 
-			time.AfterFunc(10*time.Second, func() {
+			time.AfterFunc(1*time.Second, func() {
 				processRequests(scraper)
 			})
 
