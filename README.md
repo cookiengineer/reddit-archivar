@@ -43,7 +43,6 @@ cd ./build && reddit-archivar /r/MalwareResearch;
 These subreddits went private too early, so I couldn't archive them :(
 
 - /r/security
-- /r/websec
 
 
 # License

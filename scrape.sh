@@ -65,7 +65,6 @@ cd ./build;
 ./reddit-archivar /r/websec;
 ./reddit-archivar /r/websecurity;
 ./reddit-archivar /r/owasp;
-./reddit-archivar /r/security;
 ./reddit-archivar /r/securityCTF;
 ./reddit-archivar /r/sysadmin;
 
