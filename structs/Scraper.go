@@ -23,7 +23,7 @@ var CONTENT_TYPES []string = []string{
 	"text/xml",
 }
 
-type Callback func([]byte)
+type Callback func([]byte, int)
 
 type ScraperTask struct {
 	Url      string
@@ -63,9 +63,9 @@ func processRequests(scraper *Scraper) {
 
 			var task = filtered[f]
 
-			buffer := scraper.Request(task.Url)
+			buffer, status := scraper.Request(task.Url)
 
-			task.Callback(buffer)
+			task.Callback(buffer, status)
 
 		}
 
@@ -148,7 +148,7 @@ func (scraper *Scraper) DeferRequest(url string, callback Callback) {
 
 }
 
-func (scraper *Scraper) Request(url string) []byte {
+func (scraper *Scraper) Request(url string) ([]byte, int) {
 
 	var buffer []byte
 	var content_encoding string
@@ -243,6 +243,7 @@ func (scraper *Scraper) Request(url string) []byte {
 
 	}
 
-	return buffer
+	return buffer, status_code
 
 }
+

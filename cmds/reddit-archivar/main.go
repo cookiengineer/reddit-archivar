@@ -2,13 +2,11 @@ package main
 
 import "reddit-archivar/console"
 import "reddit-archivar/structs"
-import "reddit-archivar/schemas"
 import "encoding/json"
 import "os"
 import "strings"
 
-var CACHE structs.Cache
-var SCRAPER structs.Scraper
+var ARCHIVAR structs.Archivar
 var KEYWORDS []string
 
 func init() {
@@ -25,98 +23,6 @@ func init() {
 
 			if err3 == nil {
 				json.Unmarshal(buffer, &KEYWORDS)
-			}
-
-		}
-
-	}
-
-	SCRAPER = structs.NewScraper(1)
-
-}
-
-func scrapeThreads(task *structs.Task) {
-
-	var url = task.ToURL("")
-
-	if url != "" {
-
-		SCRAPER.DeferRequest(url, func(buffer []byte) {
-
-			var schema schemas.ThreadListing
-
-			err := json.Unmarshal(buffer, &schema)
-
-			if err == nil {
-				processThreads(task, &schema)
-			}
-
-		})
-
-	}
-
-}
-
-func processThreads(task *structs.Task, schema *schemas.ThreadListing) {
-
-	if schema.Data.After != nil {
-
-		task.Count += 100
-
-		var url = task.ToURL(*schema.Data.After)
-
-		if url != "" {
-
-			SCRAPER.DeferRequest(url, func(buffer []byte) {
-
-				var schema schemas.ThreadListing
-
-				err := json.Unmarshal(buffer, &schema)
-
-				if err == nil {
-					processThreads(task, &schema)
-				}
-
-			})
-
-		}
-
-	}
-
-	if len(schema.Data.Children) > 0 {
-
-		for c := 0; c < len(schema.Data.Children); c++ {
-
-			child := schema.Data.Children[c]
-			buffer, err := json.MarshalIndent(child, "", "\t")
-
-			if err == nil {
-
-				if child.Data.Identifier != "" {
-
-					if CACHE.Exists("threads/" + child.Data.Identifier + ".json") == false {
-						CACHE.Write("threads/" + child.Data.Identifier + ".json", buffer)
-					}
-
-					if CACHE.Exists("comments/" + child.Data.Identifier + ".json") == false {
-
-						comments_task := structs.NewTask(task.Subreddit, "comments", "")
-						comments_url := comments_task.ToURL(child.Data.Identifier)
-
-						if comments_url != "" {
-
-							buffer := SCRAPER.Request(comments_url)
-
-							if len(buffer) > 0 {
-								CACHE.Write("comments/" + child.Data.Identifier + ".json", buffer)
-							}
-
-						}
-
-					}
-
-				}
-
 			}
 
 		}
@@ -205,29 +111,23 @@ func main() {
 				cwd = cwd[0:len(cwd)-6]
 			}
 
-			CACHE = structs.NewCache(cwd + "/archive/" + subreddit)
+			ARCHIVAR = structs.NewArchivar(subreddit, cwd + "/archive/" + subreddit)
 
 		} else {
-			CACHE = structs.NewCache("/tmp/reddit-archivar/" + subreddit)
+
+			ARCHIVAR = structs.NewArchivar(subreddit, "/tmp/reddit-archivar/" + subreddit)
+
 		}
+
+		ARCHIVAR.DeferScrape("hot", "")
+		ARCHIVAR.DeferScrape("new", "")
+		ARCHIVAR.DeferScrape("top", "")
 
 		for k := 0; k < len(KEYWORDS); k++ {
-
-			var task = structs.NewTask(subreddit, "search", KEYWORDS[k])
-
-			scrapeThreads(&task)
-
+			ARCHIVAR.DeferScrape("search", KEYWORDS[k])
 		}
 
-		var task_hot = structs.NewTask(subreddit, "hot", "")
-		var task_new = structs.NewTask(subreddit, "new", "")
-		var task_top = structs.NewTask(subreddit, "top", "")
-
-		scrapeThreads(&task_hot)
-		scrapeThreads(&task_new)
-		scrapeThreads(&task_top)
-
-		for SCRAPER.Busy == true {
+		for ARCHIVAR.Busy == true {
 			// Wait for Scraper
 		}
 
